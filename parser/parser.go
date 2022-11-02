@@ -14,6 +14,7 @@ type ReplayStep struct {
 	GameInfos                GameInfos `xml:"GameInfos"`
 	RulesEventWaitingRequest interface{}
 	BoardState               BoardState
+	RulesEventGameFinished   RulesEventGameFinished
 }
 
 type GameInfos struct {
@@ -61,6 +62,39 @@ type Team struct {
 	Rerolls             int    `xml:"Data>Reroll"`
 	Race                Race   `xml:"Data>IdRace"`
 	ListPitchPlayers    PitchPlayers
+}
+
+type RulesEventGameFinished struct {
+	Coaches []CoachResult `xml:"MatchResult>CoachResults>CoachResult"`
+}
+
+type MatchResult struct {
+	CoachResults CoachResults
+}
+
+type CoachResults struct {
+	Coaches []CoachResult `xml:"CoachResult"`
+}
+
+type CoachResult struct {
+	TeamResult TeamResult
+}
+
+type TeamResult struct {
+	PopularityBeforeMatch      int
+	TeamValue                  int    `xml:"TeamData>Value"`
+	Name                       string `xml:"TeamData>Name"`
+	Cheerleaders               string `xml:"TeamData>Cheerleaders"`
+	Supporters                 int    `xml:"NoSupporters"`
+	CashBeforeMatch            int    `xml:"CashBeforeMatch"`
+	CashEarnedBeforeConcession int
+	WinningsDice               int
+	CashEarned                 int
+	Popularity                 string         `xml:"TeamData>Popularity"`
+	PlayerResults              []PlayerResult `xml:"PlayerResults>PlayerResult"`
+}
+
+type PlayerResult struct {
 }
 
 type Race string

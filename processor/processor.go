@@ -3,8 +3,9 @@ package processor
 import (
 	"archive/zip"
 	"bbrz/parser"
+	"crypto/sha256"
 	"encoding/xml"
-	"github.com/google/uuid"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +13,9 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/google/uuid"
 )
 
 const (
@@ -172,7 +176,7 @@ func (r *Registry) processTask(t *Task) {
 	defer r.wg.Done()
 	log.Printf("> Processing %s", t.Filename)
 
-	res, err := zip.OpenReader(filepath.Join("./data", t.Filename))
+	res, err := zip.OpenReader(t.Filename)
 	if err != nil {
 		r.update <- Update{
 			Status: Failed,
@@ -206,11 +210,14 @@ func (r *Registry) processTask(t *Task) {
 	}
 
 	firstStep := rr.ReplaySteps[0]
+	lastStep := rr.ReplaySteps[len(rr.ReplaySteps)-1]
 
 	log.Printf("%s - %s - %s v %s", firstStep.GameInfos.League.Name,
 		firstStep.GameInfos.Competition.Name,
 		firstStep.GameInfos.CoachesInfos.CoachInfos[0].Login,
 		firstStep.GameInfos.CoachesInfos.CoachInfos[1].Login)
+
+	spew.Dump(lastStep)
 
 	r.update <- Update{
 		TaskID: t.ID,
@@ -234,7 +241,11 @@ func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request
 	}
 	defer file.Close()
 
-	resFile, err := os.Create(filepath.Join("./data", handler.Filename))
+	h := sha256.New()
+	h.Write([]byte(handler.Filename))
+	name := fmt.Sprintf("%x.bbrz", h.Sum(nil))
+
+	resFile, err := os.Create(filepath.Join("./data", name))
 	if err != nil {
 		log.Printf("Failed to process uploaded file: %v", err)
 		E(w, http.StatusInternalServerError)
@@ -244,7 +255,7 @@ func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request
 	io.Copy(resFile, file)
 	resFile.Close()
 
-	r.ProcessFile(handler.Filename)
+	r.ProcessFile(resFile.Name())
 
 	w.Write([]byte("OK"))
 }
