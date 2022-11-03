@@ -2,78 +2,22 @@ package parser
 
 import (
 	"encoding/xml"
+	"fmt"
+	"io"
 	"strings"
 )
 
 type Replay struct {
-	ClientVersion string       `xml:"ClientVersion"`
-	ReplaySteps   []ReplayStep `xml:"ReplayStep"`
+	ReplaySteps []ReplayStep `xml:"ReplayStep"`
 }
 
 type ReplayStep struct {
-	GameInfos                GameInfos `xml:"GameInfos"`
-	RulesEventWaitingRequest interface{}
-	BoardState               BoardState
-	RulesEventGameFinished   RulesEventGameFinished
-}
-
-type GameInfos struct {
-	ID           string         `xml:"Id"`
-	CoachesInfos CoachesInfos   `xml:"CoachesInfos"`
-	StadiumName  string         `xml:"NameStadium"`
-	StadiumLevel int            `xml:"LevelStadium"`
-	League       RowLeague      `xml:"RowLeague"`
-	Competition  RowCompetition `xml:"RowCompetition"`
-}
-
-type CoachesInfos struct {
-	CoachInfos []CoachInfos `xml:"CoachInfos"`
-}
-
-type CoachInfos struct {
-	Login  string `xml:"Login"`
-	UserID string `xml:"UserId"`
-}
-
-type RowLeague struct {
-	Name            string `xml:"Name"`
-	RegisteredTeams int    `xml:"NbRegisteredTeams"`
-}
-
-type RowCompetition struct {
-	Name  string `xml:"Name"`
-	Round int    `xml:"CurrentRound"`
-}
-
-type BoardState struct {
-	ListTeams ListTeams `xml:"ListTeams"`
-	Weather   int       `xml:"Meteo"`
-}
-
-type ListTeams struct {
-	TeamState []Team `xml:"TeamState"`
-}
-
-type Team struct {
-	RerollNumber        int
-	TeamRerollAvailable int
-	Name                string `xml:"Data>Name"`
-	Value               int    `xml:"Data>Value"`
-	Rerolls             int    `xml:"Data>Reroll"`
-	Race                Race   `xml:"Data>IdRace"`
-	ListPitchPlayers    PitchPlayers
+	RulesEventGameFinished RulesEventGameFinished
 }
 
 type RulesEventGameFinished struct {
-	Coaches []CoachResult `xml:"MatchResult>CoachResults>CoachResult"`
-}
-
-type MatchResult struct {
-	CoachResults CoachResults
-}
-
-type CoachResults struct {
-	Coaches []CoachResult `xml:"CoachResult"`
+	Coaches    []CoachResult `xml:"MatchResult>CoachResults>CoachResult"`
+	Statistics Statistics    `xml:"MatchResult>Row"`
 }
 
 type CoachResult struct {
@@ -84,17 +28,54 @@ type TeamResult struct {
 	PopularityBeforeMatch      int
 	TeamValue                  int    `xml:"TeamData>Value"`
 	Name                       string `xml:"TeamData>Name"`
-	Cheerleaders               string `xml:"TeamData>Cheerleaders"`
+	Cheerleaders               int    `xml:"TeamData>Cheerleaders"`
 	Supporters                 int    `xml:"NoSupporters"`
 	CashBeforeMatch            int    `xml:"CashBeforeMatch"`
 	CashEarnedBeforeConcession int
 	WinningsDice               int
 	CashEarned                 int
-	Popularity                 string         `xml:"TeamData>Popularity"`
+	Popularity                 int            `xml:"TeamData>Popularity"`
+	Race                       Race           `xml:"TeamData>IdRace"`
 	PlayerResults              []PlayerResult `xml:"PlayerResults>PlayerResult"`
 }
 
 type PlayerResult struct {
+	Name                string
+	Type                string
+	Movement            int
+	Agility             int
+	Armor               int
+	Strength            int
+	Skills              []string
+	XP                  int
+	InflictedTackles    int
+	SustainedTackles    int
+	InflictedInjuries   int
+	SustainedInjuries   int
+	InflictedCasualties int
+	SustainedCasualties int
+	MVP                 bool
+	Casualties          []string
+}
+
+type rawPlayerData struct {
+	Name                string `xml:"PlayerData>Name"`
+	Type                string `xml:"PlayerData>IdPlayerTypes"`
+	Movement            int    `xml:"PlayerData>Ma"`
+	Agility             int    `xml:"PlayerData>Ag"`
+	Armor               int    `xml:"PlayerData>Av"`
+	Strength            int    `xml:"PlayerData>St"`
+	Skills              string `xml:"PlayerData>ListSkills"`
+	XP                  int
+	InflictedTackles    int `xml:"Statistics>InflictedTackles"`
+	SustainedTackles    int `xml:"Statistics>SustainedTackles"`
+	InflictedInjuries   int `xml:"Statistics>InflictedInjuries"`
+	SustainedInjuries   int `xml:"Statistics>SustainedInjuries"`
+	InflictedCasualties int `xml:"Statistics>InflictedCasualties"`
+	SustainedCasualties int `xml:"Statistics>SustainedCasualties"`
+	MVP                 int `xml:"Statistics>MVP"`
+	Casualty1           int
+	Casualty2           int
 }
 
 type Race string
@@ -112,32 +93,8 @@ func (r *Race) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
-type PitchPlayers struct {
-	PlayerStates []PlayerState `xml:"PlayerState"`
-}
-
-type PlayerState struct {
-	Name     string   `xml:"Data>Name"`
-	Type     string   `xml:"Data>IdPlayerTypes"`
-	Movement int      `xml:"Data>Ma"`
-	Agility  int      `xml:"Data>Ag"`
-	Armor    int      `xml:"Data>Av"`
-	Strength int      `xml:"Data>St"`
-	Skills   []string `xml:"Data>ListSkills"`
-}
-
-type rawData struct {
-	Name     string `xml:"Data>Name"`
-	Type     string `xml:"Data>IdPlayerTypes"`
-	Movement int    `xml:"Data>Ma"`
-	Agility  int    `xml:"Data>Ag"`
-	Armor    int    `xml:"Data>Av"`
-	Strength int    `xml:"Data>St"`
-	Skills   string `xml:"Data>ListSkills"`
-}
-
-func (ps *PlayerState) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var raw rawData
+func (ps *PlayerResult) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var raw rawPlayerData
 	if err := d.DecodeElement(&raw, &start); err != nil {
 		return err
 	}
@@ -150,6 +107,23 @@ func (ps *PlayerState) UnmarshalXML(d *xml.Decoder, start xml.StartElement) erro
 	ps.Agility = raw.Agility
 	ps.Armor = raw.Armor
 	ps.Strength = raw.Strength
+	ps.XP = raw.XP
+	ps.InflictedInjuries = raw.InflictedInjuries
+	ps.SustainedInjuries = raw.SustainedInjuries
+	ps.InflictedTackles = raw.InflictedTackles
+	ps.SustainedTackles = raw.SustainedTackles
+	ps.InflictedCasualties = raw.InflictedCasualties
+	ps.SustainedCasualties = raw.SustainedCasualties
+
+	ps.MVP = raw.MVP == 1
+
+	ps.Casualties = make([]string, 0)
+	if raw.Casualty1 != 0 {
+		ps.Casualties = append(ps.Casualties, CasualtyMapping[fmt.Sprint(raw.Casualty1)])
+	}
+	if raw.Casualty2 != 0 {
+		ps.Casualties = append(ps.Casualties, CasualtyMapping[fmt.Sprint(raw.Casualty2)])
+	}
 
 	if raw.Skills != "" {
 		skills := strings.Split(strings.Trim(raw.Skills, "()"), ",")
@@ -163,4 +137,70 @@ func (ps *PlayerState) UnmarshalXML(d *xml.Decoder, start xml.StartElement) erro
 	}
 
 	return nil
+}
+
+type Statistics struct {
+	HomeInflictedInjuries          int
+	AwayInflictedInjuries          int
+	HomeSustainedKO                int
+	AwaySustainedKO                int
+	HomeOccupationOwn              int
+	AwayOccupationOwn              int
+	HomeValue                      int
+	AwayValue                      int
+	CoachHomeName                  string
+	CoachAwayName                  string
+	HomeWinningsDice               int
+	AwayWinningsDice               int
+	HomeScore                      int
+	AwayScore                      int
+	HomeInflictedTackles           int
+	AwayInflictedTackles           int
+	HomePossessionBall             int
+	AwayPossessionBall             int
+	HomeCashEarnedBeforeConcession int
+	AwayCashEarnedBeforeConcession int
+	HomeCashBeforeMatch            int
+	AwayCashBeforeMatch            int
+	HomeInflictedCasualties        int
+	AwayInflictedCasualties        int
+	HomePopularityBeforeMatch      int
+	AwayPopularityBeforeMatch      int
+	HomeOccupationTheir            int
+	AwayOccupationTheir            int
+	HomeSustainedTackles           int
+	AwaySustainedTackles           int
+	HomeInflictedMetersRunning     int
+	AwayInflictedMetersRunning     int
+	HomeMVP                        int
+	AwayMVP                        int
+	HomePopularityGain             int
+	AwayPopularityGain             int
+	HomeInflictedTouchdowns        int
+	AwayInflictedTouchdowns        int
+	HomeSustainedCasualties        int
+	AwaySustainedCasualties        int
+	HomeSustainedInjuries          int
+	AwaySustainedInjuries          int
+	HomeCashEarned                 int
+	AwayCashEarned                 int
+	HomeInflictedKO                int
+	AwayInflictedKO                int
+	TeamHomeName                   string
+	TeamAwayName                   string
+	HomeNbSupporters               int
+	AwayNbSupporters               int
+}
+
+func Parse(r io.Reader) (Record, error) {
+	var rr Replay
+	decoder := xml.NewDecoder(r)
+	err := decoder.Decode(&rr)
+	if err != nil {
+		return Record{}, err
+	}
+
+	record := NewRecordFromReplay(rr)
+
+	return record, nil
 }

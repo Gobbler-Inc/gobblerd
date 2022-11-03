@@ -235,3 +235,24 @@ var RaceMapping = map[string]string{
 	"24": "Bretonnia",
 	"25": "Kislev",
 }
+
+var CasualtyMapping = map[string]string{
+	"1":  "Badly Hurt",
+	"2":  "Broken Ribs",
+	"3":  "Groin Strain",
+	"4":  "Gouged Eye",
+	"5":  "Broken Jaw",
+	"6":  "Fractured Arm",
+	"7":  "Fractured Leg",
+	"8":  "Smashed Hand",
+	"9":  "Pinched Nerve",
+	"10": "Damaged Back",
+	"11": "Smashed Knee",
+	"12": "Smashed Hip",
+	"13": "Smashed Ankle",
+	"14": "Serious Concussion",
+	"15": "Fractured Skull",
+	"16": "Broken Neck",
+	"17": "Smashed Collar Bone",
+	"18": "Death",
+}

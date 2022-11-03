@@ -2,14 +2,14 @@ package main
 
 import (
 	"archive/zip"
-	"bbrz/parser"
-	"bbrz/writer/json"
 	"encoding/xml"
 	"fmt"
 	"log"
+
+	"github.com/alfreddobradi/go-bb-man/parser"
 )
 
-const file = "Coach-495574-745a245967fb458af7274335d1a2a626_2022-10-05_17_35_01.bbrz"
+const file = "testdata/test.bbrz"
 
 func main() {
 	r, err := zip.OpenReader(file)
@@ -46,9 +46,16 @@ func main() {
 		panic(err)
 	}
 
-	if err := json.WriteJSON(rr); err != nil {
-		log.Fatal(err)
-	}
+	record := parser.NewRecordFromReplay(rr)
 
-	log.Printf("Successfully written output")
+	log.Printf("%s (%s) MVP: %s", record.Home.Name, record.Home.Race, record.Home.MVP)
+	log.Printf("%s (%s) MVP: %s", record.Away.Name, record.Away.Race, record.Away.MVP)
+
+	// spew.Dump(record)
+
+	// if err := json.WriteJSON(rr); err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// log.Printf("Successfully written output")
 }
