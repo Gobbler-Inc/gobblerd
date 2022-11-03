@@ -3,6 +3,7 @@ module github.com/alfreddobradi/go-bb-man
 go 1.14
 
 require (
+	github.com/alfreddobradi/goconf v1.0.0
 	github.com/cockroachdb/cockroach-go/v2 v2.2.16
 	github.com/davecgh/go-spew v1.1.1
 	github.com/google/uuid v1.3.0

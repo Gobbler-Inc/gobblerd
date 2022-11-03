@@ -1,6 +1,9 @@
 .idea
+.vscode
 data
 target
 
 *.bbrz
 *.xml
+
+config.yml
