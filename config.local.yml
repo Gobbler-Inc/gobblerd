@@ -1,0 +1,8 @@
+# This is a local config and it's overwritten by the docker-compose environment vars
+# but since the application won't start without a config we'll just leave this here
+database:
+  kind: "crdb"
+  crdb:
+    host: roach1
+    port: 26257
+    username: root

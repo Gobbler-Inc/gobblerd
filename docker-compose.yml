@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  roach1:
+    image: cockroachdb/cockroach:v22.1.10
+    networks:
+      - roachnet
+    ports:
+      - 26257:26257
+      - 8080:8080
+    volumes:
+      - roach1-data:/cockroach/cockroach-data
+    command: "start --insecure --join=roach1,roach2,roach3"
+    healthcheck:
+      test: [ "curl", "http://localhost:8080/health" ]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+  roach2:
+    image: cockroachdb/cockroach:v22.1.10
+    networks:
+      - roachnet
+    volumes:
+      - roach2-data:/cockroach/cockroach-data
+    command: "start --insecure --join=roach1,roach2,roach3"
+    healthcheck:
+      test: [ "curl", "http://localhost:8080/health" ]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+  roach3:
+    image: cockroachdb/cockroach:v22.1.10
+    networks:
+      - roachnet
+    volumes:
+      - roach3-data:/cockroach/cockroach-data
+    command: "start --insecure --join=roach1,roach2,roach3"
+    healthcheck:
+      test: [ "curl", "http://localhost:8080/health" ]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+  gobblerd:
+    image: gobblerd:latest
+    ports:
+      - "80:8080"
+    networks:
+      - roachnet
+    environment:
+      - GOBBLER_DB_USERNAME=root
+      - GOBBLER_DB_HOST=roach1
+      - GOBBLER_DB_PORT=26257
+      - GOBBLER_DB_DATABASE=gobb_dev
+      - GOBBLER_DB_SSL_MODE=disable
+
+networks:
+  roachnet:
+
+
+volumes:
+  roach1-data:
+  roach2-data:
+  roach3-data:
