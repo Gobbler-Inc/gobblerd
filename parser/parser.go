@@ -66,14 +66,14 @@ type rawPlayerData struct {
 	Armor               int    `xml:"PlayerData>Av"`
 	Strength            int    `xml:"PlayerData>St"`
 	Skills              string `xml:"PlayerData>ListSkills"`
-	XP                  int
-	InflictedTackles    int `xml:"Statistics>InflictedTackles"`
-	SustainedTackles    int `xml:"Statistics>SustainedTackles"`
-	InflictedInjuries   int `xml:"Statistics>InflictedInjuries"`
-	SustainedInjuries   int `xml:"Statistics>SustainedInjuries"`
-	InflictedCasualties int `xml:"Statistics>InflictedCasualties"`
-	SustainedCasualties int `xml:"Statistics>SustainedCasualties"`
-	MVP                 int `xml:"Statistics>MVP"`
+	XP                  int    `xml:"Xp"`
+	InflictedTackles    int    `xml:"Statistics>InflictedTackles"`
+	SustainedTackles    int    `xml:"Statistics>SustainedTackles"`
+	InflictedInjuries   int    `xml:"Statistics>InflictedInjuries"`
+	SustainedInjuries   int    `xml:"Statistics>SustainedInjuries"`
+	InflictedCasualties int    `xml:"Statistics>InflictedCasualties"`
+	SustainedCasualties int    `xml:"Statistics>SustainedCasualties"`
+	MVP                 int    `xml:"Statistics>MVP"`
 	Casualty1           int
 	Casualty2           int
 }

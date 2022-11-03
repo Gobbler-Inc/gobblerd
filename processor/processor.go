@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alfreddobradi/go-bb-man/parser"
-
 	"github.com/alfreddobradi/go-bb-man/database"
+	"github.com/alfreddobradi/go-bb-man/helper"
+	"github.com/alfreddobradi/go-bb-man/parser"
 
 	"github.com/google/uuid"
 )
@@ -161,7 +161,11 @@ func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 				task.Status = evt.Status
 				task.Error = evt.Error
 				r.processedTasks.Add(task)
-				log.Printf("< Processed task %s with status %d", evt.TaskID.String(), evt.Status)
+				if evt.Error != nil {
+					log.Printf("< Processed task %s with status %s: %v", evt.TaskID.String(), evt.Status.String(), evt.Error)
+				} else {
+					log.Printf("< Processed task %s with status %s", evt.TaskID.String(), evt.Status.String())
+				}
 			}
 		}
 	}()
@@ -241,14 +245,14 @@ func (r *Registry) processTask(t *Task) {
 func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request) {
 	if err := req.ParseMultipartForm(MaxContentLength); err != nil {
 		log.Printf("Failed to process uploaded file: %v", err)
-		E(w, http.StatusRequestEntityTooLarge)
+		helper.E(w, http.StatusRequestEntityTooLarge)
 		return
 	}
 
 	file, handler, err := req.FormFile("replay")
 	if err != nil {
 		log.Printf("Failed to process uploaded file: %v", err)
-		E(w, http.StatusInternalServerError)
+		helper.E(w, http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
@@ -260,7 +264,7 @@ func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request
 	resFile, err := os.Create(filepath.Join("/tmp", name))
 	if err != nil {
 		log.Printf("Failed to process uploaded file: %v", err)
-		E(w, http.StatusInternalServerError)
+		helper.E(w, http.StatusInternalServerError)
 		return
 	}
 
@@ -270,8 +274,4 @@ func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request
 	r.ProcessFile(resFile.Name()) // nolint
 
 	w.Write([]byte("OK")) // nolint
-}
-
-func E(w http.ResponseWriter, status int) {
-	http.Error(w, http.StatusText(status), status)
 }
