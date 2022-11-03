@@ -2,9 +2,7 @@ package processor
 
 import (
 	"archive/zip"
-	"bbrz/parser"
 	"crypto/sha256"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
@@ -14,7 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/alfreddobradi/go-bb-man/parser"
+
+	"github.com/alfreddobradi/go-bb-man/database"
+
 	"github.com/google/uuid"
 )
 
@@ -53,9 +54,11 @@ type Task struct {
 }
 
 type Registry struct {
-	mx *sync.Mutex
-	wg *sync.WaitGroup
+	mx       *sync.Mutex
+	globalWg *sync.WaitGroup
+	wg       *sync.WaitGroup
 
+	db             database.DB
 	done           chan struct{}
 	update         chan Update
 	tasks          *TaskList
@@ -118,10 +121,13 @@ func (t *TaskList) Range(cb func(id uuid.UUID, t *Task)) {
 	}
 }
 
-func NewRegistry() *Registry {
+func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 	r := &Registry{
-		mx: &sync.Mutex{},
-		wg: &sync.WaitGroup{},
+		mx:       &sync.Mutex{},
+		globalWg: gwg,
+		wg:       &sync.WaitGroup{},
+
+		db: db,
 
 		done:           make(chan struct{}),
 		update:         make(chan Update),
@@ -144,7 +150,10 @@ func NewRegistry() *Registry {
 				})
 			case <-r.done:
 				t.Stop()
+				log.Println("Waiting for running tasks to finish")
 				r.wg.Wait()
+				r.globalWg.Done()
+				log.Println("Done")
 				return
 			case evt := <-r.update:
 				task := r.tasks.Get(evt.TaskID)
@@ -158,6 +167,11 @@ func NewRegistry() *Registry {
 	}()
 
 	return r
+}
+
+func (r *Registry) Stop() {
+	log.Println("Stopping task watcher")
+	r.done <- struct{}{}
 }
 
 func (r *Registry) ProcessFile(filename string) error {
@@ -198,26 +212,24 @@ func (r *Registry) processTask(t *Task) {
 	}
 	defer rc.Close()
 
-	var rr parser.Replay
-	decoder := xml.NewDecoder(rc)
-	err = decoder.Decode(&rr)
+	record, err := parser.Parse(rc)
 	if err != nil {
 		r.update <- Update{
+			TaskID: t.ID,
 			Status: Failed,
 			Error:  err,
 		}
 		return
 	}
 
-	firstStep := rr.ReplaySteps[0]
-	lastStep := rr.ReplaySteps[len(rr.ReplaySteps)-1]
-
-	log.Printf("%s - %s - %s v %s", firstStep.GameInfos.League.Name,
-		firstStep.GameInfos.Competition.Name,
-		firstStep.GameInfos.CoachesInfos.CoachInfos[0].Login,
-		firstStep.GameInfos.CoachesInfos.CoachInfos[1].Login)
-
-	spew.Dump(lastStep)
+	if err := r.db.SaveReplay(record); err != nil {
+		r.update <- Update{
+			TaskID: t.ID,
+			Status: Failed,
+			Error:  err,
+		}
+		return
+	}
 
 	r.update <- Update{
 		TaskID: t.ID,
@@ -245,19 +257,19 @@ func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request
 	h.Write([]byte(handler.Filename))
 	name := fmt.Sprintf("%x.bbrz", h.Sum(nil))
 
-	resFile, err := os.Create(filepath.Join("./data", name))
+	resFile, err := os.Create(filepath.Join("/tmp", name))
 	if err != nil {
 		log.Printf("Failed to process uploaded file: %v", err)
 		E(w, http.StatusInternalServerError)
 		return
 	}
 
-	io.Copy(resFile, file)
+	io.Copy(resFile, file) // nolint
 	resFile.Close()
 
-	r.ProcessFile(resFile.Name())
+	r.ProcessFile(resFile.Name()) // nolint
 
-	w.Write([]byte("OK"))
+	w.Write([]byte("OK")) // nolint
 }
 
 func E(w http.ResponseWriter, status int) {
