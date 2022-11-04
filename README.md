@@ -75,3 +75,31 @@ There's currently no UI so the most convenient way to upload replays is using [P
 * Set the `Key` for the first row to `replay`
 * There's a dropdown when hovering over a field in the `Key` column, set it to `File` and 
 * Once set to `File` you can browse for the file you want to upload in the `Value` column
+
+### Deploying UI code
+
+All of the files are embedded in the binary which means you'll have to rebuild the Docker image when they're changed.
+It's either this or fumbling around with Docker volumes and configurations which is just inconvenient.
+
+The UI server is set up to cater to SPAs, no matter what URL you pass in, if it's not caught by the routes before it (api and asset paths) it will render the `ui/templates/index.html` file.
+
+If you've made changes to the UI and built it, you can copy the asset files to `ui/assets` and update the `index.html` file in `ui/templates`.
+
+For example creating a boilerplate project with Vite and Vue and building it resulted in the following `dist/` directory:
+```
+	dist/assets/index.46fee175.js
+	dist/assets/index.75e12fc4.css
+	dist/assets/vite.4a748afd.svg
+	dist/assets/vue.5532db34.svg
+```
+
+To add these to GobblerD, you'll have to copy them to the `ui/assets` directory. The files in this directory are going to be served at `http://localhost/assets/<filename>`.
+
+When that's done, update the `ui/templates/index.html` template as well with the built index (`dist/index.html`).
+
+As I mentioned earlier, you'll have to rebuild the image, so let's do that:
+```
+$ docker build -t gobblerd:latest .
+```
+
+When you bring the cluster up and navigate to `http://localhost` you should see your changes.
