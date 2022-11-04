@@ -15,7 +15,6 @@ func Load(path string) error {
 		Database struct {
 			Kind string `env:"GOBBLER_DB_KIND"`
 			CRDB struct {
-				// postgresql://gobb:TTjYniGOFXQK6CrK2emurA@free-tier5.gcp-europe-west1.cockroachlabs.cloud:26257/gobb-dev?application_name=ccloud&options=--cluster%3Dpurple-moose-1962&sslmode=verify-full&sslrootcert=%2FUsers%2Falfred.dobradi%2F.postgresql%2Froot.crt
 				Username    string `env:"GOBBLER_DB_USERNAME"`
 				Password    string `env:"GOBBLER_DB_PASSWORD"`
 				Host        string `env:"GOBBLER_DB_HOST"`
