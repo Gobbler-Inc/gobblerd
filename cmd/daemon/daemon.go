@@ -77,6 +77,8 @@ func main() {
 	r.HandleFunc("/api/replays/{id}", api.ReplayHandler(db)).Methods(http.MethodGet)
 	r.HandleFunc("/api/replays/{id}", helper.CorsHandler).Methods(http.MethodOptions)
 
+	r.PathPrefix("/").Handler(ui.MainPageHandler())
+
 	s := http.Server{
 		Addr:         "0.0.0.0:8080",
 		Handler:      r,
