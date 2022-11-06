@@ -15,6 +15,7 @@ import (
 	"github.com/alfreddobradi/go-bb-man/database/cockroach"
 	"github.com/alfreddobradi/go-bb-man/helper"
 	"github.com/alfreddobradi/go-bb-man/processor"
+	"github.com/alfreddobradi/go-bb-man/ui"
 
 	"github.com/gorilla/mux"
 )
@@ -32,7 +33,7 @@ func main() {
 	}
 
 	retries := 8
-	retryInterval := 100
+	retryInterval := 1000
 
 	var db *cockroach.DB
 	var err error
@@ -64,6 +65,9 @@ func main() {
 
 	r := mux.NewRouter()
 
+	assetHandler := ui.NewAssetHandler("/assets")
+	r.PathPrefix(assetHandler.Prefix).Handler(assetHandler)
+
 	r.HandleFunc("/upload", reg.HandleProcessRequest).Methods(http.MethodPost)
 	r.HandleFunc("/upload", helper.CorsHandler).Methods(http.MethodOptions)
 
@@ -73,9 +77,13 @@ func main() {
 	r.HandleFunc("/api/replays/{id}", api.ReplayHandler(db)).Methods(http.MethodGet)
 	r.HandleFunc("/api/replays/{id}", helper.CorsHandler).Methods(http.MethodOptions)
 
+	r.PathPrefix("/").Handler(ui.MainPageHandler())
+
 	s := http.Server{
-		Addr:    "0.0.0.0:8080",
-		Handler: r,
+		Addr:         "0.0.0.0:8080",
+		Handler:      r,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
 
 	sigChan := make(chan os.Signal, 1)
