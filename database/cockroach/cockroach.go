@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/alfreddobradi/go-bb-man/parser"
@@ -19,7 +18,7 @@ type DB struct {
 }
 
 func New() (*DB, error) {
-	log.Printf("Connecting to CockroachDB at %s", Host())
+	logger.WithField("host", Host()).Info("Connecting to CockroachDB")
 	connUrl := createConnUrl()
 
 	config, err := pgx.ParseConfig(connUrl)
@@ -31,6 +30,8 @@ func New() (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error connecting to cluster: %v", err)
 	}
+
+	logger.WithField("host", Host()).Info("Connected to CockroachDB")
 
 	return &DB{conn}, nil
 }

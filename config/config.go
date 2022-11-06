@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/alfreddobradi/go-bb-man/database/cockroach"
+	"github.com/alfreddobradi/go-bb-man/logging"
 	"github.com/alfreddobradi/goconf"
 )
 
@@ -12,6 +13,12 @@ var Cfg *goconf.Configuration
 
 func Load(path string) error {
 	grammar := struct {
+		Logging struct {
+			Format string `env:"GOBBLER_LOGGING_FORMAT"`
+			Kind   string `env:"GOBBLER_LOGGING_KIND"`
+			Path   string `env:"GOBBLER_LOGGING_PATH"`
+			Level  string `env:"GOBBLER_LOGGING_LEVEL"`
+		}
 		Database struct {
 			Kind string `env:"GOBBLER_DB_KIND"`
 			CRDB struct {
@@ -39,6 +46,8 @@ func Load(path string) error {
 	}
 
 	Cfg = config
+
+	SetLoggingConfig(config)
 
 	if config.GetString("database.kind") == "crdb" {
 		SetCockroachConfig(config)
@@ -78,5 +87,23 @@ func SetCockroachConfig(config *goconf.Configuration) {
 
 	if sslRootCert := config.GetString("database.crdb.ssl_root_cert"); sslRootCert != "" && sslRootCert != cockroach.SSLRootCert() {
 		cockroach.SetSSLRootCert(sslRootCert)
+	}
+}
+
+func SetLoggingConfig(config *goconf.Configuration) {
+	if format := config.GetString("logging.format"); format != logging.Format() {
+		logging.SetFormat(format)
+	}
+
+	if kind := config.GetString("logging.kind"); kind != logging.Kind() {
+		logging.SetKind(kind)
+	}
+
+	if path := config.GetString("logging.path"); path != logging.Path() {
+		logging.SetPath(path)
+	}
+
+	if level := config.GetString("logging.level"); level != logging.Level().String() {
+		logging.SetLevel(level)
 	}
 }
