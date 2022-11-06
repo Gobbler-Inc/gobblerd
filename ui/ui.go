@@ -3,6 +3,7 @@ package ui
 import (
 	"embed"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 
@@ -10,10 +11,9 @@ import (
 )
 
 var (
-	//go:embed assets
-	assets embed.FS
+	//go:embed dist
+	dist embed.FS
 
-	//go:embed templates
 	templates embed.FS
 )
 
@@ -28,7 +28,14 @@ func NewAssetHandler(prefix string) AssetHandler {
 func (ah AssetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s : %s", r.Method, r.URL)
 
-	http.FileServer(http.FS(assets)).ServeHTTP(w, r)
+	sub, err := fs.Sub(dist, "dist")
+	if err != nil {
+		log.Printf("Failed to substitute root path: %v", err)
+		helper.E(w, http.StatusInternalServerError)
+		return
+	}
+	fs := http.FS(sub)
+	http.FileServer(fs).ServeHTTP(w, r)
 }
 
 type SpaHandler struct {
