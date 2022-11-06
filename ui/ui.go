@@ -40,7 +40,7 @@ func (ah SpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to open %s: %v", path, err)
 
 		// For now I don't see any point in making this more universal but in the future we might want to add more exceptions
-		if filepath.Ext("path") == ".ico" {
+		if filepath.Ext(path) == ".ico" {
 			helper.E(w, http.StatusNotFound)
 			return
 		}
