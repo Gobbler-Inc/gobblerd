@@ -137,6 +137,7 @@ func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 	}
 
 	go func() {
+		logger.WithField("interval", TaskInterval().String()).Debug("Starting task runner")
 		t := time.NewTicker(TaskInterval())
 		for {
 			select {
