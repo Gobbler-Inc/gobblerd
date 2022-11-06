@@ -2,10 +2,13 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	"github.com/alfreddobradi/go-bb-man/database/cockroach"
 	"github.com/alfreddobradi/go-bb-man/logging"
+	"github.com/alfreddobradi/go-bb-man/processor"
 	"github.com/alfreddobradi/goconf"
 )
 
@@ -13,6 +16,9 @@ var Cfg *goconf.Configuration
 
 func Load(path string) error {
 	grammar := struct {
+		Runner struct {
+			TaskInterval string `yaml:"task_interval" env:"GOBBLER_RUNNER_TASK_INTERVAL"`
+		}
 		Logging struct {
 			Format string `env:"GOBBLER_LOGGING_FORMAT"`
 			Kind   string `env:"GOBBLER_LOGGING_KIND"`
@@ -48,6 +54,8 @@ func Load(path string) error {
 	Cfg = config
 
 	SetLoggingConfig(config)
+
+	SetRunnerConfig(config)
 
 	if config.GetString("database.kind") == "crdb" {
 		SetCockroachConfig(config)
@@ -106,4 +114,14 @@ func SetLoggingConfig(config *goconf.Configuration) {
 	if level := config.GetString("logging.level"); level != logging.Level().String() {
 		logging.SetLevel(level)
 	}
+}
+
+func SetRunnerConfig(config *goconf.Configuration) {
+	taskInterval := config.GetString("runner.task_interval")
+	interval, err := time.ParseDuration(taskInterval)
+	if err != nil {
+		log.Printf("Invalid interval %s. Using default %s.", taskInterval, processor.TaskInterval())
+		return
+	}
+	processor.SetTaskInterval(interval)
 }

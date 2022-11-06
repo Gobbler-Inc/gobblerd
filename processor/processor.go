@@ -137,7 +137,7 @@ func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 	}
 
 	go func() {
-		t := time.NewTicker(time.Second)
+		t := time.NewTicker(TaskInterval())
 		for {
 			select {
 			case <-t.C:
