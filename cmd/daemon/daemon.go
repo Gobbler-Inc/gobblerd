@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,10 +13,13 @@ import (
 	"github.com/alfreddobradi/go-bb-man/config"
 	"github.com/alfreddobradi/go-bb-man/database/cockroach"
 	"github.com/alfreddobradi/go-bb-man/helper"
+	"github.com/alfreddobradi/go-bb-man/logging"
 	"github.com/alfreddobradi/go-bb-man/processor"
 	"github.com/alfreddobradi/go-bb-man/ui"
 
 	"github.com/gorilla/mux"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -31,6 +33,8 @@ func main() {
 	if err := config.Load(configPath); err != nil {
 		panic(err)
 	}
+
+	logger := logging.NewLogger("main")
 
 	retries := 8
 	retryInterval := 1000
@@ -49,13 +53,16 @@ func main() {
 		}
 		try++
 		wait := time.Duration(retryInterval) * time.Millisecond
-		log.Printf("Connection failed, retrying in %s - Error: %v", wait.String(), err)
+		logger.WithError(err).WithFields(log.Fields{
+			"retry_timeout": wait.String(),
+			"try":           try,
+		}).Warn("Connection failed")
 		time.Sleep(wait)
 		retryInterval = retryInterval << 2
 	}
 
 	if err != nil {
-		panic(err)
+		logger.WithError(err).WithField("max_retries", retries).Fatalf("Maximum number of retries reached, giving up.")
 	}
 	defer db.Close(context.Background())
 
@@ -91,12 +98,12 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("Error in HTTP listener: %v", err)
+			logger.WithError(err).Error("Error in HTTP listener")
 		}
 	}()
 
 	<-sigChan
-	log.Println("Received signal")
+	logger.Debug("Received stop signal")
 	s.Shutdown(context.Background())
 	reg.Stop()
 	wg.Wait()

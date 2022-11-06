@@ -83,7 +83,7 @@ type Race string
 func (r *Race) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var rr string
 	if err := d.DecodeElement(&rr, &start); err != nil {
-		return err
+		return fmt.Errorf("Failed to decode element: %w", err)
 	}
 
 	if race, ok := RaceMapping[rr]; ok {
@@ -96,7 +96,7 @@ func (r *Race) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 func (ps *PlayerResult) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var raw rawPlayerData
 	if err := d.DecodeElement(&raw, &start); err != nil {
-		return err
+		return fmt.Errorf("Failed to decode element: %w", err)
 	}
 
 	ps.Name = raw.Name
@@ -197,7 +197,7 @@ func Parse(r io.Reader) (Record, error) {
 	decoder := xml.NewDecoder(r)
 	err := decoder.Decode(&rr)
 	if err != nil {
-		return Record{}, err
+		return Record{}, fmt.Errorf("Failed to decode element: %w", err)
 	}
 
 	record := NewRecordFromReplay(rr)

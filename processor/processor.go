@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,6 +14,8 @@ import (
 	"github.com/alfreddobradi/go-bb-man/database"
 	"github.com/alfreddobradi/go-bb-man/helper"
 	"github.com/alfreddobradi/go-bb-man/parser"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 )
@@ -136,11 +137,12 @@ func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 	}
 
 	go func() {
-		t := time.NewTicker(time.Second)
+		logger.WithField("interval", TaskInterval().String()).Debug("Starting task runner")
+		t := time.NewTicker(TaskInterval())
 		for {
 			select {
 			case <-t.C:
-				log.Printf("Looking for new tasks to pick up")
+				logger.Trace("Looking for new tasks to pick up")
 				r.tasks.Range(func(id uuid.UUID, task *Task) {
 					if task.Status == Waiting {
 						task.Status = Processing
@@ -150,10 +152,9 @@ func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 				})
 			case <-r.done:
 				t.Stop()
-				log.Println("Waiting for running tasks to finish")
+				logger.Info("Received stop signal, waiting for tasks to finish")
 				r.wg.Wait()
 				r.globalWg.Done()
-				log.Println("Done")
 				return
 			case evt := <-r.update:
 				task := r.tasks.Get(evt.TaskID)
@@ -161,11 +162,14 @@ func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 				task.Status = evt.Status
 				task.Error = evt.Error
 				r.processedTasks.Add(task)
+				loggerContext := logger.WithFields(log.Fields{
+					"id":     evt.TaskID.String(),
+					"status": evt.Status.String(),
+				})
 				if evt.Error != nil {
-					log.Printf("< Processed task %s with status %s: %v", evt.TaskID.String(), evt.Status.String(), evt.Error)
-				} else {
-					log.Printf("< Processed task %s with status %s", evt.TaskID.String(), evt.Status.String())
+					loggerContext = loggerContext.WithError(evt.Error)
 				}
+				loggerContext.Debug("Processed task")
 			}
 		}
 	}()
@@ -174,7 +178,7 @@ func NewRegistry(db database.DB, gwg *sync.WaitGroup) *Registry {
 }
 
 func (r *Registry) Stop() {
-	log.Println("Stopping task watcher")
+	logger.Debug("Stopping task watcher")
 	r.done <- struct{}{}
 }
 
@@ -192,7 +196,7 @@ func (r *Registry) ProcessFile(filename string) error {
 
 func (r *Registry) processTask(t *Task) {
 	defer r.wg.Done()
-	log.Printf("> Processing %s", t.Filename)
+	logger.WithField("filename", t.Filename).Trace("Processing file")
 
 	res, err := zip.OpenReader(t.Filename)
 	if err != nil {
@@ -244,14 +248,14 @@ func (r *Registry) processTask(t *Task) {
 
 func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request) {
 	if err := req.ParseMultipartForm(MaxContentLength); err != nil {
-		log.Printf("Failed to process uploaded file: %v", err)
+		logger.WithError(err).Error("Failed to process uploaded file")
 		helper.E(w, http.StatusRequestEntityTooLarge)
 		return
 	}
 
 	file, handler, err := req.FormFile("replay")
 	if err != nil {
-		log.Printf("Failed to process uploaded file: %v", err)
+		logger.WithError(err).Error("Failed to process uploaded file")
 		helper.E(w, http.StatusInternalServerError)
 		return
 	}
@@ -263,7 +267,7 @@ func (r *Registry) HandleProcessRequest(w http.ResponseWriter, req *http.Request
 
 	resFile, err := os.Create(filepath.Join("/tmp", name))
 	if err != nil {
-		log.Printf("Failed to process uploaded file: %v", err)
+		logger.WithError(err).Error("Failed to create destination file")
 		helper.E(w, http.StatusInternalServerError)
 		return
 	}

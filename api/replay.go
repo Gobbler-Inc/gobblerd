@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/alfreddobradi/go-bb-man/database"
@@ -15,7 +14,7 @@ func ReplayListHandler(db database.DB) func(w http.ResponseWriter, r *http.Reque
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.GetReplayList()
 		if err != nil {
-			log.Printf("Failed to get replay list: %v", err)
+			logger.WithError(err).Error("Failed to get replay list")
 			helper.E(w, http.StatusInternalServerError)
 			return
 		}
@@ -24,7 +23,7 @@ func ReplayListHandler(db database.DB) func(w http.ResponseWriter, r *http.Reque
 
 		encoder := json.NewEncoder(w)
 		if err := encoder.Encode(rows); err != nil {
-			log.Printf("Failed to encode response: %v", err)
+			logger.WithError(err).Error("Failed to encode response")
 			helper.E(w, http.StatusInternalServerError)
 			return
 		}
@@ -37,14 +36,14 @@ func ReplayHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 
 		id, err := uuid.Parse(vars["id"])
 		if err != nil {
-			log.Printf("Failed to parse ID %s: %v", vars["id"], err)
+			logger.WithError(err).WithField("id", vars["id"]).Error("Failed to parse replay ID")
 			helper.E(w, http.StatusInternalServerError)
 			return
 		}
 
 		replay, err := db.GetReplay(id)
 		if err != nil {
-			log.Printf("Failed to get replay list: %v", err)
+			logger.WithError(err).WithField("id", id).Error("Failed to get replay")
 			helper.E(w, http.StatusInternalServerError)
 			return
 		}
@@ -53,7 +52,7 @@ func ReplayHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 
 		encoder := json.NewEncoder(w)
 		if err := encoder.Encode(replay); err != nil {
-			log.Printf("Failed to encode response: %v", err)
+			logger.WithError(err).Error("Failed to encode response")
 			helper.E(w, http.StatusInternalServerError)
 			return
 		}
