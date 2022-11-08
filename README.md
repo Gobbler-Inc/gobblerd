@@ -36,6 +36,7 @@ Then we create the database and the single table we'll have for now:
 > USE gobb_dev;
 > CREATE TABLE replays (
       id uuid NOT NULL,
+      competition jsonb NOT NULL,
       home_team jsonb NOT NULL,
       away_team jsonb NOT NULL
   );

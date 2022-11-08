@@ -12,7 +12,13 @@ type Replay struct {
 }
 
 type ReplayStep struct {
+	GameInfos              GameInfos
 	RulesEventGameFinished RulesEventGameFinished
+}
+
+type GameInfos struct {
+	League      string `xml:"RowLeague>Name"`
+	Competition string `xml:"RowCompetition>Name"`
 }
 
 type RulesEventGameFinished struct {

@@ -7,9 +7,15 @@ import (
 )
 
 type Record struct {
-	ID   uuid.UUID
-	Home TeamStats
-	Away TeamStats
+	ID          uuid.UUID
+	Competition Competition
+	Home        TeamStats
+	Away        TeamStats
+}
+
+type Competition struct {
+	League      string
+	Competition string
 }
 
 type TeamStats struct {
@@ -48,10 +54,17 @@ type TeamStats struct {
 }
 
 func NewRecordFromReplay(replay Replay) Record {
-	finished := replay.ReplaySteps[len(replay.ReplaySteps)-1].RulesEventGameFinished
-	stats := finished.Statistics
-	homeTeam := finished.Coaches[0].TeamResult
-	awayTeam := finished.Coaches[1].TeamResult
+	gameInfos := replay.ReplaySteps[0].GameInfos
+
+	competition := Competition{
+		League:      gameInfos.League,
+		Competition: gameInfos.Competition,
+	}
+
+	gameFinished := replay.ReplaySteps[len(replay.ReplaySteps)-1].RulesEventGameFinished
+	stats := gameFinished.Statistics
+	homeTeam := gameFinished.Coaches[0].TeamResult
+	awayTeam := gameFinished.Coaches[1].TeamResult
 
 	home := TeamStats{
 		Name:                       stats.TeamHomeName,
@@ -131,11 +144,12 @@ func NewRecordFromReplay(replay Replay) Record {
 		}
 	}
 
-	id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(fmt.Sprintf("%s-%s:%s-%s", home.Name, home.CoachName, away.Name, away.CoachName)))
+	id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(fmt.Sprintf("%s:%s:%s-%s:%s-%s", competition.League, competition.Competition, home.Name, home.CoachName, away.Name, away.CoachName)))
 
 	return Record{
-		ID:   id,
-		Home: home,
-		Away: away,
+		ID:          id,
+		Competition: competition,
+		Home:        home,
+		Away:        away,
 	}
 }
