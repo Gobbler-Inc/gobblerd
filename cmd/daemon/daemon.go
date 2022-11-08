@@ -97,6 +97,9 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		logger.WithFields(log.Fields{
+			"address": s.Addr,
+		}).Info("Starting HTTP listener")
 		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.WithError(err).Error("Error in HTTP listener")
 		}

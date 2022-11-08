@@ -45,9 +45,13 @@ func (db *DB) SaveReplay(record parser.Record) error {
 	if err != nil {
 		return fmt.Errorf("Failed to marshal away team data: %v", err)
 	}
+	compJson, err := json.Marshal(record.Competition)
+	if err != nil {
+		return fmt.Errorf("Failed to marshal competition data: %v", err)
+	}
 
 	txErr := crdbpgx.ExecuteTx(context.Background(), db, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		_, err := tx.Exec(context.Background(), `INSERT INTO replays (id, home_team, away_team) VALUES ($1, $2, $3)`, record.ID.String(), string(homeJson), string(awayJson))
+		_, err := tx.Exec(context.Background(), `INSERT INTO replays (id, competition, home_team, away_team) VALUES ($1, $2, $3, $4)`, record.ID.String(), string(compJson), string(homeJson), string(awayJson))
 		if err != nil {
 			return err
 		}
@@ -72,25 +76,31 @@ func (db *DB) GetReplayList() ([]parser.Record, error) {
 		var id uuid.UUID
 		var home string
 		var away string
-		if err := rows.Scan(&id, &home, &away); err != nil {
+		var comp string
+		if err := rows.Scan(&id, &comp, &home, &away); err != nil {
 			return nil, fmt.Errorf("Failed to scan row into struct: %w", err)
 		}
 
 		var homeStruct parser.TeamStats
-		var awayStruct parser.TeamStats
-
 		if err := json.Unmarshal([]byte(home), &homeStruct); err != nil {
 			return nil, fmt.Errorf("Failed to unmarshal home team data in replay %s: %w", id.String(), err)
 		}
 
+		var awayStruct parser.TeamStats
 		if err := json.Unmarshal([]byte(away), &awayStruct); err != nil {
 			return nil, fmt.Errorf("Failed to unmarshal away team data in replay %s: %w", id.String(), err)
 		}
 
+		var compStruct parser.Competition
+		if err := json.Unmarshal([]byte(comp), &compStruct); err != nil {
+			return nil, fmt.Errorf("Failed to unmarshal competition data in replay %s: %w", id.String(), err)
+		}
+
 		response = append(response, parser.Record{
-			ID:   id,
-			Home: homeStruct,
-			Away: awayStruct,
+			ID:          id,
+			Competition: compStruct,
+			Home:        homeStruct,
+			Away:        awayStruct,
 		})
 	}
 
@@ -108,7 +118,8 @@ func (db *DB) GetReplay(id uuid.UUID) (parser.Record, error) {
 		var id uuid.UUID
 		var home string
 		var away string
-		if err := rows.Scan(&id, &home, &away); err != nil {
+		var comp string
+		if err := rows.Scan(&id, &comp, &home, &away); err != nil {
 			return parser.Record{}, fmt.Errorf("Failed to scan row into struct: %w", err)
 		}
 
@@ -123,11 +134,21 @@ func (db *DB) GetReplay(id uuid.UUID) (parser.Record, error) {
 			return parser.Record{}, fmt.Errorf("Failed to unmarshal away team data in replay %s: %w", id.String(), err)
 		}
 
+		var compStruct parser.Competition
+		if err := json.Unmarshal([]byte(comp), &compStruct); err != nil {
+			return parser.Record{}, fmt.Errorf("Failed to unmarshal competition data in replay %s: %w", id.String(), err)
+		}
+
 		response = append(response, parser.Record{
-			ID:   id,
-			Home: homeStruct,
-			Away: awayStruct,
+			ID:          id,
+			Competition: compStruct,
+			Home:        homeStruct,
+			Away:        awayStruct,
 		})
+	}
+
+	if len(response) == 0 {
+		return parser.Record{}, fmt.Errorf("Replay %s not found", id.String())
 	}
 
 	return response[0], nil
