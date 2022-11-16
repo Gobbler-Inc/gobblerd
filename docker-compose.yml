@@ -10,33 +10,8 @@ services:
       - 8080:8080
     volumes:
       - roach1-data:/cockroach/cockroach-data
-    command: "start --insecure --join=roach1,roach2,roach3"
-    healthcheck:
-      test: [ "curl", "http://localhost:8080/health" ]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-  roach2:
-    image: cockroachdb/cockroach:v22.1.10
-    networks:
-      - roachnet
-    volumes:
-      - roach2-data:/cockroach/cockroach-data
-    command: "start --insecure --join=roach1,roach2,roach3"
-    healthcheck:
-      test: [ "curl", "http://localhost:8080/health" ]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-  roach3:
-    image: cockroachdb/cockroach:v22.1.10
-    networks:
-      - roachnet
-    volumes:
-      - roach3-data:/cockroach/cockroach-data
-    command: "start --insecure --join=roach1,roach2,roach3"
+      - ./database_entrypoint/:/docker-entrypoint-initdb.d/
+    command: "start-single-node --insecure"
     healthcheck:
       test: [ "curl", "http://localhost:8080/health" ]
       interval: 1m30s
@@ -62,5 +37,3 @@ networks:
 
 volumes:
   roach1-data:
-  roach2-data:
-  roach3-data:

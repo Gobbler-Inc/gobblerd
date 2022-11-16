@@ -2,50 +2,7 @@
 
 *All commands - unless specified otherwise - should be ran from the project root*
 
-### Initializing the local CockroachDB cluster
-
-**This only needs to be done if the cluster hasn't been initialized yet or the volumes have been recreated**
-
-Start the Cockroach nodes:
-
-```
-$ docker compose up roach1 roach2 roach3
-```
-
-Once the nodes are running they'll warn about being unable to communicate with other nodes in the cluster.
-To fix this, we'll have to initialize the cluster on the first node. In a new tab/window run the following:
-
-```
-$ docker compose exec roach1 ./cockroach init --insecure
-```
-
-Once this finishes, the nodes should find each other and they each report their own info in the original docker compose output.
-
-Now the nodes can communicate with each other we should create the schema:
-
-First we connect to the server running on the roach1 node
-
-```
-$ docker compose exec roach1 ./cockroach sql --insecure
-```
-
-Then we create the database and the single table we'll have for now:
-
-```
-> CREATE DATABASE gobb_dev;
-> USE gobb_dev;
-> CREATE TABLE replays (
-      id uuid NOT NULL,
-      home_team jsonb NOT NULL,
-      away_team jsonb NOT NULL
-  );
-```
-
-When this is done, quit the cockroach client (Ctrl+D) and shut the cluster down by pressing Ctrl+C in the docker compose tab/window
-
 ### Starting the daemon
-
-Provided the initialization worked, this is quite simple:
 
 Build the image:
 
