@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alfreddobradi/go-bb-man/parser"
+	"github.com/gobbler-inc/gobblerd/parser"
 	"github.com/google/uuid"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"

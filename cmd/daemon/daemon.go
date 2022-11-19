@@ -9,13 +9,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alfreddobradi/go-bb-man/api"
-	"github.com/alfreddobradi/go-bb-man/config"
-	"github.com/alfreddobradi/go-bb-man/database/cockroach"
-	"github.com/alfreddobradi/go-bb-man/helper"
-	"github.com/alfreddobradi/go-bb-man/logging"
-	"github.com/alfreddobradi/go-bb-man/processor"
-	"github.com/alfreddobradi/go-bb-man/ui"
+	"github.com/gobbler-inc/gobblerd/api"
+	"github.com/gobbler-inc/gobblerd/config"
+	"github.com/gobbler-inc/gobblerd/database/cockroach"
+	"github.com/gobbler-inc/gobblerd/helper"
+	"github.com/gobbler-inc/gobblerd/logging"
+	"github.com/gobbler-inc/gobblerd/processor"
+	"github.com/gobbler-inc/gobblerd/ui"
 
 	"github.com/gorilla/mux"
 

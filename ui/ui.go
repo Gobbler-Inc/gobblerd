@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/alfreddobradi/go-bb-man/helper"
+	"github.com/gobbler-inc/gobblerd/helper"
 	"github.com/sirupsen/logrus"
 )
 
