@@ -1,7 +1,7 @@
 package cockroach
 
 import (
-	"github.com/alfreddobradi/go-bb-man/logging"
+	"github.com/gobbler-inc/gobblerd/logging"
 	"github.com/sirupsen/logrus"
 )
 

@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/alfreddobradi/go-bb-man/database/cockroach"
-	"github.com/alfreddobradi/go-bb-man/logging"
-	"github.com/alfreddobradi/go-bb-man/processor"
 	"github.com/alfreddobradi/goconf"
+	"github.com/gobbler-inc/gobblerd/database/cockroach"
+	"github.com/gobbler-inc/gobblerd/logging"
+	"github.com/gobbler-inc/gobblerd/processor"
 )
 
 var Cfg *goconf.Configuration

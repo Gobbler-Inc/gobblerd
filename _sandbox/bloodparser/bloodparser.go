@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/alfreddobradi/go-bb-man/parser"
+	"github.com/gobbler-inc/gobblerd/parser"
 )
 
 const file = "testdata/test.bbrz"

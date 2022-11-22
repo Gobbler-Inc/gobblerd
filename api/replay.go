@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/alfreddobradi/go-bb-man/database"
-	"github.com/alfreddobradi/go-bb-man/helper"
+	"github.com/gobbler-inc/gobblerd/database"
+	"github.com/gobbler-inc/gobblerd/helper"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )

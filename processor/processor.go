@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alfreddobradi/go-bb-man/database"
-	"github.com/alfreddobradi/go-bb-man/helper"
-	"github.com/alfreddobradi/go-bb-man/parser"
+	"github.com/gobbler-inc/gobblerd/database"
+	"github.com/gobbler-inc/gobblerd/helper"
+	"github.com/gobbler-inc/gobblerd/parser"
 
 	log "github.com/sirupsen/logrus"
 
